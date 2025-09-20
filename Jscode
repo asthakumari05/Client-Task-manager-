@@ -1,0 +1,105 @@
+const taskInput = document.getElementById("taskInput");
+const addBtn = document.getElementById("addBtn");
+const taskList = document.getElementById("taskList");
+const filterBtns = document.querySelectorAll(".filter-btn");
+const clearCompletedBtn = document.getElementById("clearCompleted");
+const remainingCount = document.getElementById("remainingCount");
+const searchInput = document.getElementById("searchInput");
+const prioritySelect = document.getElementById("prioritySelect");
+const themeToggle = document.getElementById("themeToggle");
+
+let tasks = [];
+let filter = "all";
+let dragSrcEl = null;
+
+const generateId = () =>
+  Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+function saveTasks() { localStorage.setItem("tasks_v2", JSON.stringify(tasks)); }
+function loadTasks() { tasks = JSON.parse(localStorage.getItem("tasks_v2") || "[]"); }
+
+function setTheme(theme){
+  if(theme === "dark") document.documentElement.setAttribute("data-theme","dark");
+  else document.documentElement.removeAttribute("data-theme");
+  localStorage.setItem("tm_theme", theme);
+}
+
+function initTheme(){
+  const saved = localStorage.getItem("tm_theme") || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light');
+  setTheme(saved);
+  themeToggle.textContent = saved==="dark"?"☀️":"🌙";
+}
+
+function renderTasks(){
+  const q = (searchInput.value||"").toLowerCase().trim();
+  taskList.innerHTML="";
+  tasks.filter(t=>{
+    if(filter==="active" && t.done) return false;
+    if(filter==="completed" && !t.done) return false;
+    if(q && !t.text.toLowerCase().includes(q)) return false;
+    return true;
+  }).forEach(task=>{
+    const li=document.createElement("li");
+    li.className="task-item"; li.setAttribute("draggable","true"); li.dataset.id=task.id;
+
+    const handle=document.createElement("div"); handle.className="handle"; handle.innerHTML="⋮⋮";
+    const textWrap=document.createElement("div"); textWrap.className="text";
+
+    const priorityTag=document.createElement("span"); 
+    priorityTag.className=`priority ${task.priority}`;
+    priorityTag.textContent=task.priority[0].toUpperCase()+task.priority.slice(1);
+
+    const p=document.createElement("p"); p.textContent=task.text; if(task.done) p.classList.add("completed");
+    p.addEventListener("dblclick",()=>startEdit(li,task));
+
+    textWrap.appendChild(priorityTag); textWrap.appendChild(p);
+
+    const actions=document.createElement("div"); actions.className="actions";
+
+    const doneBtn=document.createElement("button"); doneBtn.className="small-btn"; doneBtn.textContent=task.done?"Undo":"Done";
+    doneBtn.addEventListener("click",()=>toggleDone(task.id));
+
+    const editBtn=document.createElement("button"); editBtn.className="small-btn"; editBtn.textContent="Edit";
+    editBtn.addEventListener("click",()=>startEdit(li,task));
+
+    const delBtn=document.createElement("button"); delBtn.className="small-btn"; delBtn.textContent="Delete"; delBtn.style.color="var(--danger)";
+    delBtn.addEventListener("click",()=>deleteTask(task.id));
+
+    actions.appendChild(doneBtn); actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+    li.appendChild(handle); li.appendChild(textWrap); li.appendChild(actions);
+
+    li.addEventListener("dragstart",handleDragStart);
+    li.addEventListener("dragover",handleDragOver);
+    li.addEventListener("dragenter",handleDragEnter);
+    li.addEventListener("dragleave",handleDragLeave);
+    li.addEventListener("drop",handleDrop);
+    li.addEventListener("dragend",handleDragEnd);
+
+    taskList.appendChild(li);
+  });
+  updateRemaining();
+}
+
+function addTask(){
+  const text = taskInput.value.trim();
+  const pr = prioritySelect.value||"medium";
+  if(!text) return;
+  tasks.unshift({id:generateId(),text,done:false,priority:pr});
+  saveTasks(); renderTasks(); taskInput.value=""; taskInput.focus();
+}
+
+function toggleDone(id){ tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t); saveTasks(); renderTasks(); }
+function deleteTask(id){ tasks=tasks.filter(t=>t.id!==id); saveTasks(); renderTasks(); }
+function clearCompleted(){ tasks=tasks.filter(t=>!t.done); saveTasks(); renderTasks(); }
+
+function startEdit(li,task){
+  const textWrap = li.querySelector(".text"); textWrap.innerHTML="";
+  const input = document.createElement("input"); input.className="edit-input"; input.value=task.text;
+  textWrap.appendChild(input); input.focus();
+  const finish=()=>{const txt=input.value.trim(); if(txt){tasks=tasks.map(t=>t.id===task.id?{...t,text:txt}:t); saveTasks();} renderTasks();}
+  input.addEventListener("keydown",e=>{if(e.key==="Enter")finish(); if(e.key==="Escape")renderTasks();});
+  input.addEventListener("blur",finish);
+}
+
+function handleDragStart(e){ this.classList.add("dragging"); dragSrcEl=this; e.dataTransfer.effectAllowed="move"; e.dataTransfer.set
