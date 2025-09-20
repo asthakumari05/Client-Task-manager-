@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Task Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <h1>Task Manager</h1>
+      <div class="controls">
+        <button id="themeToggle" aria-label="Toggle dark mode">🌙</button>
+      </div>
+    </header>
+
+    <main class="card">
+      <section class="input-row">
+        <select id="prioritySelect" aria-label="Select priority">
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+        <input id="taskInput" type="text" placeholder="Add a new task..." />
+        <button id="addBtn">Add</button>
+      </section>
+
+      <section class="search-row">
+        <input id="searchInput" type="search" placeholder="Search tasks..." />
+      </section>
+
+      <section class="filters-row">
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="active">Active</button>
+          <button class="filter-btn" data-filter="completed">Completed</button>
+        </div>
+        <button id="clearCompleted">Clear Completed</button>
+      </section>
+
+      <ul id="taskList" class="task-list" aria-live="polite"></ul>
+
+      <footer class="footer-row">
+        <small id="remainingCount">0 tasks remaining</small>
+        <small class="hint">Drag & drop to reorder • Double-click to edit</small>
+      </footer>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
